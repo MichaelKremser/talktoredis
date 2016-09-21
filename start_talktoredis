@@ -1,0 +1,8 @@
+#!/bin/sh
+# in /etc/network/interfaces:
+# up /usr/local/bin/nodejs/start_talktoredis 120 >> /var/log/talktoredis.log &
+echo "Starting talktoredis @ `date`"
+echo "Starting talktoredis @ `date`" >> /var/log/mk.log
+sleep $1
+cd /usr/local/bin/nodejs
+/usr/bin/node /usr/local/bin/nodejs/talktoredis.js
