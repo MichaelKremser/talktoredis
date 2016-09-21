@@ -1,0 +1,62 @@
+#!/bin/bash
+# Put a number in /etc/checkrediskey.conf that specifies the polling intervall
+# Caveat: This will leave some connections in TIME_WAIT, so don't be surprised if you issue `netstat -tpn`.
+SOMEVAR_WLAN=''
+OLDVAR_WLAN=''
+SOMEVAR_SPEAK=''
+SYSCMD=''
+QUITME=''
+while [ "$QUITME" == "" ]; do
+	SOMEVAR_WLAN=`/usr/local/bin/redis-bash-cli -h localhost GET wlan.powermode`;
+	if [ "$OLDVAR_WLAN" != "" ] && [ "$SOMEVAR_WLAN" != "$OLDVAR_WLAN" ]
+	then
+		/bin/date '+%a %F %H:%M:%S'
+		echo "Value has changed from $OLDVAR_WLAN to $SOMEVAR_WLAN";
+		if [ "$SOMEVAR_WLAN" == "on" ]
+		then
+			startwlanap
+			espeak "wireless network has been turned on" 2>/dev/null
+		fi
+		if [ "$SOMEVAR_WLAN" == "off" ]
+		then
+			stopwlanap
+			espeak "wireless network has been shut down" 2>/dev/null
+		fi
+		if [ "$SOMEVAR_WLAN" == "reset" ]
+		then
+			stopwlanap
+			startwlanap
+			/usr/local/bin/redis-bash-cli -h localhost SET wlan.powermode on
+			SOMEVAR_WLAN="on"
+		fi
+	fi
+	OLDVAR_WLAN=$SOMEVAR_WLAN;
+
+	SOMEVAR_SPEAK=`/usr/local/bin/redis-bash-cli -h localhost GET speak.text`;
+	if [ "$SOMEVAR_SPEAK" != "" ] && [ "$SOMEVAR_SPEAK" != "-1" ]
+	then
+		espeak -v de -s 80 "$SOMEVAR_SPEAK" 2>/dev/null
+		/usr/local/bin/redis-bash-cli -h localhost SET speak.text "";
+	fi
+
+	SYSCMD=`/usr/local/bin/redis-bash-cli -h localhost GET syscmd`;
+	if [ "$SYSCMD" != "" ] && [ "$SYSCMD" != "-1" ]
+	then
+		echo "Got command $SYSCMD!"
+		/usr/local/bin/redis-bash-cli -h localhost SET syscmd "";
+		if [ "$SYSCMD" == "restart_ssh" ]
+		then
+			service ssh restart
+		fi
+		if [ "$SYSCMD" == "log" ]
+		then
+			/bin/date '+%a %F %H:%M:%S' > /root/checkrediskey.log
+		fi
+		if [ "$SYSCMD" == "quit" ]
+		then
+			QUITME='y'
+		fi
+	fi
+
+	sleep `cat /etc/checkrediskey.conf`;
+done;
