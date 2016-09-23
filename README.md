@@ -14,6 +14,10 @@ Starts the beforementioned Node JS app.
 
 This is a shell script that polls the values of some keys of the Redis server in a specified interval. It reacts to changes and executes commands dependent on the key whose value was changed.
 
+## CheckRedisKey.py
+
+Does basically the same as its shell script counterpart checkrediskey. Difference #1 is the syscmd "log", which just prints the date and time instead of writing it to some file in "/root" (which can be considered quite bad practice). Difference #2 is that it features a syscmd "restart_nm" to restart network manager.
+
 # Demonstration video
 
 I've uploaded a demonstration video on YouTube:
